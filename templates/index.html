@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Invoice - Premium Billing System{% endblock %}
+
+{% block page_header %}Create New Invoice{% endblock %}
+
+{% block content %}
+<div class="card fade-in">
+    <form id="invoice-form" class="invoice-form">
+        <!-- Invoice Info Section -->
+        <div class="form-grid">
+            <div class="form-section">
+                <h3 class="section-title"><i class="fa-solid fa-file-invoice"></i> Invoice Details</h3>
+                
+                <div class="input-group">
+                    <label for="invoice_number">Invoice Number</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-hashtag"></i>
+                        <input type="text" id="invoice_number" name="invoice_number" value="{{ invoice_number }}" required readonly>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="input-group">
+                        <label for="created_at">Issue Date</label>
+                        <input type="date" id="created_at" name="created_at" value="{{ today }}" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="due_date">Due Date</label>
+                        <input type="date" id="due_date" name="due_date">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="section-title"><i class="fa-solid fa-user-tie"></i> Client Information</h3>
+                
+                <div class="input-group">
+                    <label for="client_name">Client Name <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="client_name" name="client_name" placeholder="John Doe or Acme Corp" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="client_email">Client Email</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" id="client_email" name="client_email" placeholder="client@example.com">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="client_address">Client Address</label>
+                    <textarea id="client_address" name="client_address" rows="2" placeholder="123 Business Rd, Suite 100"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <hr class="form-divider">
+
+        <!-- Line Items Section -->
+        <div class="items-section">
+            <h3 class="section-title"><i class="fa-solid fa-list-check"></i> Invoice Items</h3>
+            
+            <div class="table-responsive">
+                <table class="items-table" id="items-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 45%;">Description <span class="required">*</span></th>
+                            <th style="width: 15%; text-align: right;">Quantity</th>
+                            <th style="width: 20%; text-align: right;">Unit Price ($)</th>
+                            <th style="width: 15%; text-align: right;">Amount ($)</th>
+                            <th style="width: 5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-body">
+                        <!-- Default Row -->
+                        <tr class="item-row">
+                            <td>
+                                <input type="text" name="item_desc" class="form-control item-desc" placeholder="Product/Service description" required>
+                            </td>
+                            <td>
+                                <input type="number" name="item_qty" class="form-control text-right item-qty" value="1" min="0.01" step="any" required>
+                            </td>
+                            <td>
+                                <input type="number" name="item_price" class="form-control text-right item-price" value="0.00" min="0" step="0.01" required>
+                            </td>
+                            <td class="item-total-cell text-right">0.00</td>
+                            <td class="text-center">
+                                <button type="button" class="btn-remove" onclick="removeRow(this)">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="button" class="btn btn-secondary mt-3" id="btn-add-item">
+                <i class="fa-solid fa-plus"></i> Add Item
+            </button>
+        </div>
+
+        <hr class="form-divider">
+
+        <!-- Summary & Notes Section -->
+        <div class="summary-grid">
+            <div class="notes-container">
+                <div class="input-group">
+                    <label for="notes">Notes / Payment Terms</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Payment due within 30 days. Bank info: Routing XXXXXX Account XXXXXX"></textarea>
+                </div>
+            </div>
+
+            <div class="calculations-container">
+                <div class="calc-row">
+                    <span>Subtotal:</span>
+                    <span id="summary-subtotal">$0.00</span>
+                </div>
+                
+                <div class="calc-row-inputs">
+                    <div class="calc-input-group">
+                        <label for="discount">Discount</label>
+                        <div class="discount-inputs">
+                            <input type="number" id="discount" name="discount" value="0" min="0" step="any">
+                            <select id="discount_type" name="discount_type">
+                                <option value="flat">Flat ($)</option>
+                                <option value="percent">Percent (%)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="calc-input-group">
+                        <label for="tax_rate">Tax Rate (%)</label>
+                        <input type="number" id="tax_rate" name="tax_rate" value="0" min="0" max="100" step="any">
+                    </div>
+                </div>
+
+                <div class="calc-row text-muted font-sm">
+                    <span>Discount Deducted:</span>
+                    <span id="summary-discount">-$0.00</span>
+                </div>
+                <div class="calc-row text-muted font-sm">
+                    <span>Tax Charged:</span>
+                    <span id="summary-tax">+$0.00</span>
+                </div>
+                
+                <div class="calc-row total-row">
+                    <span>Total Amount:</span>
+                    <span id="summary-total">$0.00</span>
+                </div>
+
+                <div class="calc-row status-selection">
+                    <label for="status">Initial Status:</label>
+                    <select id="status" name="status" class="status-select-badge">
+                        <option value="Unpaid">Unpaid</option>
+                        <option value="Paid">Paid</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions mt-4">
+            <button type="submit" class="btn btn-primary" id="btn-save-invoice">
+                <i class="fa-solid fa-floppy-disk"></i> Create & View Invoice
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

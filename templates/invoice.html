@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}Invoice {{ invoice.invoice_number }} - Premium Billing System{% endblock %}
+
+{% block page_header %}Invoice Details{% endblock %}
+
+{% block content %}
+<!-- Invoice Actions (Hidden when printing) -->
+<div class="invoice-actions-bar no-print fade-in">
+    <div class="actions-left">
+        <a href="{{ url_for('history') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    <div class="actions-right">
+        <button class="btn btn-secondary status-toggle-btn {% if invoice.status == 'Paid' %}badge-paid{% else %}badge-unpaid{% endif %}"
+                onclick="toggleStatus({{ invoice.id }}, '{{ invoice.status }}')">
+            <i class="fa-solid fa-sync"></i> Mark as {% if invoice.status == 'Paid' %}Unpaid{% else %}Paid{% endif %}
+        </button>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> Print / Save PDF
+        </button>
+    </div>
+</div>
+
+<!-- Invoice Layout (Styled to look like standard document sheet) -->
+<div class="invoice-container-wrapper fade-in">
+    <div class="invoice-paper" id="invoice-printable-area">
+        <!-- Watermark / Status Stamp -->
+        <div class="invoice-stamp {% if invoice.status == 'Paid' %}stamp-paid{% else %}stamp-unpaid{% endif %}">
+            {{ invoice.status }}
+        </div>
+
+        <!-- Header -->
+        <div class="invoice-paper-header">
+            <div class="company-branding">
+                <div class="company-logo">
+                    <i class="fa-solid fa-file-invoice-dollar text-primary"></i>
+                    <span class="company-name font-outfit">Antigravity<span class="text-primary-accent">Bill</span></span>
+                </div>
+                <div class="company-address text-muted font-sm mt-2">
+                    <p>100 Innovation Way, Suite 400</p>
+                    <p>Tech City, TC 94043</p>
+                    <p>billing@antigravity.com</p>
+                </div>
+            </div>
+            
+            <div class="invoice-meta-info text-right">
+                <h2 class="invoice-title font-outfit">INVOICE</h2>
+                <div class="meta-item mt-2">
+                    <span class="meta-label text-muted">Invoice Number:</span>
+                    <span class="meta-value font-weight-bold">{{ invoice.invoice_number }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label text-muted">Issue Date:</span>
+                    <span class="meta-value">{{ invoice.created_at }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label text-muted">Due Date:</span>
+                    <span class="meta-value font-weight-semibold text-danger">{{ invoice.due_date if invoice.due_date else 'Upon Receipt' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="paper-divider">
+
+        <!-- Billing Info Grid -->
+        <div class="billing-details-grid">
+            <div class="billing-col">
+                <span class="details-heading text-muted">BILLED TO:</span>
+                <div class="client-details mt-2">
+                    <h4 class="client-name">{{ invoice.client_name }}</h4>
+                    {% if invoice.client_email %}
+                    <p class="client-email font-sm text-muted mt-1"><i class="fa-solid fa-envelope font-xs"></i> {{ invoice.client_email }}</p>
+                    {% endif %}
+                    {% if invoice.client_address %}
+                    <p class="client-address font-sm text-muted mt-1" style="white-space: pre-line;"><i class="fa-solid fa-location-dot font-xs"></i> {{ invoice.client_address }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="billing-col text-right">
+                <span class="details-heading text-muted">PAYMENT METHOD:</span>
+                <div class="payment-details mt-2 font-sm text-muted">
+                    <p>Bank Transfer / ACH</p>
+                    <p>Account: **** **** 9876</p>
+                    <p>Routing: 121000248</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Table -->
+        <table class="invoice-display-table mt-4">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 55%; text-align: left;">Item Description</th>
+                    <th style="width: 10%; text-align: right;">Qty</th>
+                    <th style="width: 15%; text-align: right;">Unit Price</th>
+                    <th style="width: 15%; text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="text-muted font-sm">{{ loop.index }}</td>
+                    <td class="font-weight-medium">{{ item.description }}</td>
+                    <td class="text-right">{{ item.quantity }}</td>
+                    <td class="text-right">${{ "{:,.2f}".format(item.unit_price) }}</td>
+                    <td class="text-right font-weight-semibold">${{ "{:,.2f}".format(item.amount) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Calculations Breakdown -->
+        <div class="invoice-summary-layout mt-4">
+            <div class="payment-terms-box">
+                {% if invoice.notes %}
+                    <span class="details-heading text-muted">NOTES / TERMS:</span>
+                    <p class="notes-content font-sm text-muted mt-1" style="white-space: pre-line;">{{ invoice.notes }}</p>
+                {% endif %}
+            </div>
+
+            <div class="totals-breakdown-box">
+                <div class="breakdown-row">
+                    <span class="text-muted">Subtotal:</span>
+                    <span id="breakdown-subtotal"></span>
+                </div>
+                
+                {% if invoice.discount > 0 %}
+                <div class="breakdown-row">
+                    <span class="text-muted">Discount {% if invoice.discount_type == 'percent' %}({{ invoice.discount }}%){% endif %}:</span>
+                    <span class="text-danger">-$0.00</span>
+                </div>
+                {% endif %}
+
+                {% if invoice.tax_rate > 0 %}
+                <div class="breakdown-row">
+                    <span class="text-muted">Tax Rate ({{ invoice.tax_rate }}%):</span>
+                    <span class="text-success">+$0.00</span>
+                </div>
+                {% endif %}
+
+                <hr class="breakdown-divider">
+
+                <div class="breakdown-row grand-total-row">
+                    <span class="font-weight-bold">Amount Due:</span>
+                    <span class="grand-total-amount text-primary font-outfit">${{ "{:,.2f}".format(invoice.total_amount) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="invoice-paper-footer">
+            <p class="font-weight-semibold">Thank you for your business!</p>
+            <p class="font-sm text-muted mt-1">If you have any questions about this invoice, please contact support.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Calculate subtotal and detail breakdowns correctly for visual display from page items
+    document.addEventListener("DOMContentLoaded", () => {
+        const itemRows = document.querySelectorAll(".invoice-display-table tbody tr");
+        let subtotal = 0;
+        itemRows.forEach(row => {
+            const amountText = row.querySelector("td:last-child").textContent.replace("$", "").replace(/,/g, "");
+            subtotal += parseFloat(amountText) || 0;
+        });
+        
+        document.getElementById("breakdown-subtotal").textContent = "$" + subtotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        // Let's refine the tax and discount display values based on invoice rates
+        const taxRate = {{ invoice.tax_rate }};
+        const discount = {{ invoice.discount }};
+        const discountType = "{{ invoice.discount_type }}";
+        const totalAmount = {{ invoice.total_amount }};
+
+        // Determine correct discount and tax breakdown figures
+        let discountValue = 0;
+        if (discount > 0) {
+            if (discountType === 'percent') {
+                discountValue = subtotal * (discount / 100);
+            } else {
+                discountValue = discount;
+            }
+            const discountElem = document.querySelector(".totals-breakdown-box .text-danger");
+            if (discountElem) {
+                discountElem.textContent = "-$" + discountValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+        }
+
+        if (taxRate > 0) {
+            const taxableBasis = subtotal - discountValue;
+            const taxValue = taxableBasis * (taxRate / 100);
+            const taxElem = document.querySelector(".totals-breakdown-box .text-success");
+            if (taxElem) {
+                taxElem.textContent = "+$" + taxValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+        }
+    });
+</script>
+{% endblock %}

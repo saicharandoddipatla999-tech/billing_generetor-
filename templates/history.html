@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}Invoice Dashboard - Premium Billing System{% endblock %}
+
+{% block page_header %}Dashboard & Invoice History{% endblock %}
+
+{% block content %}
+<!-- Analytics Summary Grid -->
+<div class="stats-grid fade-in">
+    <div class="stat-card">
+        <div class="stat-icon icon-revenue">
+            <i class="fa-solid fa-wallet"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Total Revenue</span>
+            <span class="stat-value" id="stat-revenue">${{ "%.2f"|format(total_revenue or 0) }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon icon-collected">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Collected</span>
+            <span class="stat-value" id="stat-collected">${{ "%.2f"|format(paid_sum or 0) }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon icon-pending">
+            <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Outstanding</span>
+            <span class="stat-value" id="stat-outstanding">${{ "%.2f"|format(unpaid_sum or 0) }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon icon-count">
+            <i class="fa-solid fa-file-invoice"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Total Invoices</span>
+            <span class="stat-value" id="stat-count">{{ total_invoices or 0 }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- History Table Section -->
+<div class="card mt-4 fade-in">
+    <div class="card-header-actions">
+        <h3 class="card-title"><i class="fa-solid fa-history"></i> Invoice Registry</h3>
+
+        <!-- Filters -->
+        <div class="filter-controls">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="search-input" placeholder="Search client or number...">
+            </div>
+
+            <div class="filter-dropdown">
+                <select id="status-filter">
+                    <option value="all">All Statuses</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Unpaid">Unpaid</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive mt-3">
+        <table class="data-table" id="invoices-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Invoice #</th>
+                    <th style="width: 25%;">Client</th>
+                    <th style="width: 15%;">Date</th>
+                    <th style="width: 15%;">Due Date</th>
+                    <th style="width: 15%; text-align: right;">Amount</th>
+                    <th style="width: 10%; text-align: center;">Status</th>
+                    <th style="width: 10%; text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="invoices-body">
+                {% if invoices %}
+                {% for inv in invoices %}
+                <tr class="invoice-row" data-invoice-id="{{ inv.id }}">
+                    <td class="font-weight-semibold">
+                        <a href="{{ url_for('invoice_detail', invoice_number=inv.invoice_number) }}"
+                            class="invoice-link">
+                            {{ inv.invoice_number }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="client-name-cell">{{ inv.client_name }}</div>
+                        {% if inv.client_email %}
+                        <div class="client-email-cell text-muted font-sm">{{ inv.client_email }}</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ inv.created_at }}</td>
+                    <td>{{ inv.due_date if inv.due_date else 'N/A' }}</td>
+                    <td class="text-right font-weight-semibold text-color-primary">${{ "%.2f"|format(inv.total_amount or
+                        0) }}</td>
+                    <td class="text-center">
+                        <button
+                            class="status-badge {% if inv.status == 'Paid' %}badge-paid{% else %}badge-unpaid{% endif %}"
+                            onclick="toggleStatus({{ inv.id }}, '{{ inv.status }}')" title="Click to toggle status">
+                            <span class="status-dot"></span>
+                            <span class="status-text">{{ inv.status }}</span>
+                        </button>
+                    </td>
+                    <td class="text-right actions-cell">
+                        <a href="{{ url_for('invoice_detail', invoice_number=inv.invoice_number) }}"
+                            class="btn-action btn-view" title="View & Print">
+                            <i class="fa-solid fa-eye"></i>
+                        </a>
+                        <button class="btn-action btn-delete" onclick="deleteInvoice({{ inv.id }})"
+                            title="Delete Invoice">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr id="empty-state-row">
+                    <td colspan="7" class="text-center py-5 empty-state-container">
+                        <div class="empty-state">
+                            <i class="fa-solid fa-file-circle-minus empty-icon"></i>
+                            <h4>No Invoices Found</h4>
+                            <p class="text-muted">Create your first invoice to populate this dashboard.</p>
+                            <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
+                                <i class="fa-solid fa-plus"></i> Create Invoice
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

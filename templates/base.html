@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Premium Billing System{% endblock %}</title>
+    <!-- Fonts and Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar no-print">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fa-solid fa-file-invoice-dollar logo-icon"></i>
+                    <span>market<span class="logo-accent">Bill</span></span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item {% if request.path == '/' %}active{% endif %}" id="nav-create">
+                    <i class="fa-solid fa-plus-circle"></i>
+                    <span>Create Invoice</span>
+                </a>
+                <a href="{{ url_for('history') }}" class="nav-item {% if request.path == '/history' %}active{% endif %}" id="nav-history">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Dashboard & History</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <p>&copy; 2026 Antigravity Inc.</p>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Top bar -->
+            <header class="top-bar no-print">
+                <div class="page-title">
+                    <h1>{% block page_header %}Dashboard{% endblock %}</h1>
+                </div>
+               <div class="user-profile" onclick="toggleProfileMenu()">
+
+    <img src="https://ui-avatars.com/api/?name=Admin+Billing&background=6366f1&color=fff"
+         alt="User Avatar"
+         class="avatar">
+
+    <div class="profile-info">
+        <span class="profile-name">Billing Admin</span>
+        <span class="profile-role">Owner</span>
+    </div>
+
+    <span class="profile-arrow">⌄</span>
+
+    <!-- Profile Dropdown -->
+    <div class="profile-menu" id="profileMenu">
+
+        <div class="menu-user">
+            <strong>Billing Admin</strong>
+            <small>Owner Account</small>
+        </div>
+
+        <div class="menu-divider"></div>
+
+        <button onclick="showProfile(event)">
+            👤 Profile
+        </button>
+
+        <button onclick="showSettings(event)">
+            ⚙️ Settings
+        </button>
+
+        <button onclick="logout(event)" class="logout-btn">
+            🚪 Logout
+        </button>
+
+    </div>
+
+</div> 
+            </header>
+
+            <!-- Page-specific contents -->
+            <div class="content-body">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container no-print"></div>
+<!-- Profile Modal -->
+<div class="profile-modal" id="profileModal">
+
+    <div class="profile-modal-content">
+
+        <button class="profile-close" onclick="closeProfile()">
+            &times;
+        </button>
+
+        <div class="profile-modal-avatar">
+            AB
+        </div>
+
+        <h2>Billing Admin</h2>
+
+        <p class="profile-modal-role">Owner</p>
+
+        <div class="profile-details">
+
+            <div class="profile-detail">
+                <span>👤 Account</span>
+                <strong>Billing Admin</strong>
+            </div>
+
+            <div class="profile-detail">
+                <span>🔑 Role</span>
+                <strong>Owner</strong>
+            </div>
+
+            <div class="profile-detail">
+                <span>🟢 Status</span>
+                <strong>Active</strong>
+            </div>
+
+        </div>
+
+        <button class="profile-close-btn" onclick="closeProfile()">
+            Close
+        </button>
+
+    </div>
+
+</div>
+<!-- Settings Modal -->
+<div class="profile-modal" id="settingsModal">
+
+    <div class="profile-modal-content">
+
+        <button class="profile-close" onclick="closeSettings()">
+            &times;
+        </button>
+
+        <h2>⚙️ Settings</h2>
+
+        <p class="profile-modal-role">
+            Billing System Settings
+        </p>
+
+        <div class="settings-form">
+
+            <label>👤 Admin Name</label>
+            <input type="text" id="adminName" value="Billing Admin">
+
+            <label>🔑 Role</label>
+            <input type="text" id="adminRole" value="Owner">
+
+            <label>🏢 Business Name</label>
+            <input type="text" id="businessName" value="MarketBill">
+
+            <label>🔔 Notifications</label>
+            <select id="notifications">
+                <option value="Enabled">Enabled</option>
+                <option value="Disabled">Disabled</option>
+            </select>
+
+            <label>🧾 Invoice Format</label>
+            <select id="invoiceFormat">
+                <option value="Default">Default</option>
+                <option value="Professional">Professional</option>
+                <option value="Simple">Simple</option>
+            </select>
+
+        </div>
+
+        <button class="save-settings-btn" onclick="saveSettings()">
+            💾 Save Settings
+        </button>
+
+        <button class="profile-close-btn" onclick="closeSettings()">
+            Close
+        </button>
+
+    </div>
+
+</div>
+    <!-- Main Script -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
